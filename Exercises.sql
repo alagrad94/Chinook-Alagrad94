@@ -106,7 +106,8 @@ GROUP BY e.LastName, e.FirstName
 --Top 2009 Agent
 SELECT TOP(1) s.FirstName, s.LastName, s.Sales2009 AS MaxSales
 FROM 
-	(SELECT e.EmployeeId as EmployeeId, e.FirstName AS FirstName, e.LastName AS LastName, SUM(CASE WHEN i.Total > 0 AND i.InvoiceDate BETWEEN '2009-01-01' AND '2009-12-31' THEN i.Total ELSE 0 END) AS Sales2009
+	(SELECT e.EmployeeId as EmployeeId, e.FirstName AS FirstName, e.LastName AS LastName, 
+	SUM(CASE WHEN i.Total > 0 AND i.InvoiceDate BETWEEN '2009-01-01' AND '2009-12-31' THEN i.Total ELSE 0 END) AS Sales2009
 	FROM Employee e
 	LEFT JOIN Customer c ON c.SupportRepId = e.EmployeeId
 	LEFT JOIN Invoice i ON c.CustomerId = i.CustomerId
@@ -116,16 +117,19 @@ GROUP BY s.FirstName, s.LastName, s.Sales2009
 ORDER BY MaxSales DESC
 
 --Top Agent
-SELECT TOP(1) s.FirstName, s.LastName, MAX(s.TotalSales) AS TotalSales
+SELECT *
 FROM 
 	(SELECT e.FirstName AS FirstName, e.LastName AS LastName, SUM(i.Total) AS TotalSales
 	FROM Employee e
 	LEFT JOIN Customer c ON c.SupportRepId = e.EmployeeId
 	LEFT JOIN Invoice i ON c.CustomerId = i.CustomerId
-	WHERE Title LIKE 'Sales Support Agent'
 	GROUP BY e.LastName, e.FirstName) s
-GROUP BY s.FirstName, s.LastName
-ORDER BY TotalSales DESC
+WHERE TotalSales = (SELECT MAX(t.TotalSales) FROM 
+	(SELECT SUM(i.Total) AS TotalSales
+	FROM Employee e
+	LEFT JOIN Customer c ON c.SupportRepId = e.EmployeeId
+	LEFT JOIN Invoice i ON c.CustomerId = i.CustomerId
+	GROUP BY e.LastName) t)
 
 --Sales Agent Customer Count
 SELECT e.FirstName, e.LastName, COUNT(CASE WHEN c.SupportRepId = e.EmployeeId THEN 1 ELSE NULL END) As CustCount
